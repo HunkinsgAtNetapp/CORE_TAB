@@ -79,7 +79,6 @@
       private_key: "{{ lookup('file', private_key) }}"
       name: ocsm.netapp.com
       common_name: "{{ ocsm_cert_name }}"
-      svm: "{{ admin_svm }}"
   - name: Get ocsm cert from ONTAP
     netapp.ontap.na_ontap_rest_cli:
       hostname: "{{ hostname }}"
@@ -88,17 +87,17 @@
       #command: 'security/certificates'
       command: 'security/certificate'
       verb: 'GET'
-      params: {'vserver': '{{ admin_svm }}','type':'server','fields':'serial: '{{ ocsm.netapp.com }}'}
+      params: {'vserver': '{{ admin_svm }}','type':'server','fields':'serial','common-name': '{{ ocsm_cert_name }}'}
       validate_certs: false
       https: true
     register: server_cert
-  - debug: var=root_ca_cert.msg.records[0].serial
+  - debug: var=server_cert.msg.records[0].serial
   - name: Point ONTAP at cert for ocsm
     netapp.ontap.na_ontap_ssh_command:
       hostname: "{{ hostname }}"
       username: "{{ username }}"
       password: "{{ password }}"
-      command: ssl modify -vserver cluster1 -ca ghunkz_root.com -common-name ghunkz_root.com -server-enabled true
+      command: ssl modify -vserver cluster1 -ca ghunkz_root.com -common-name "{{ ocsm_cert_name }}" -server-enabled true -serial "{{ server_cert.msg.records[0].serial }}"
       privilege: admin
       accept_unknown_host_keys: true
   - name: Export Create
