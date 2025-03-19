@@ -1,0 +1,189 @@
+# TAB_LIVE_TROUBLESHOOTING
+- 
+  name: Configure ONTAP
+  hosts: localhost
+  collections:
+    - netapp.ontap
+  vars:
+    hostname: 192.168.0.101
+    username: admin
+    password: Netapp1!
+    vserver: svm1_cluster1
+    aggr: aggr1
+    vol_name: vol1
+    cifs_user: georgek
+	ontap_cert_root_common_name: ghunkz_root.com
+    ontap_cert_name: ghunkz_root
+	ocsm_cert_name: ocsm.netapp.com
+    private_key: /etc/ssl/private/{{ ocsm.netapp.com }}.pem
+    csr_path: /etc/ssl/csr/{{ ocsm.netapp.com }}.csr
+  tasks:
+  - name: Create the SSL Private directory
+    ansible.builtin.file:
+      path: /etc/ssl/private
+      state: directory
+      mode: '0755'
+  - name: Create the SSL CSR directory
+    ansible.builtin.file:
+      path: /etc/ssl/csr
+      state: directory
+      mode: '0755'
+  - name: Generate an OpenSSL private key with the default values (4096 bits, RSA)
+    community.crypto.openssl_privatekey:
+      path: "{{ private_key }}"
+  - name: Generate an OpenSSL Certificate Signing Request
+    community.crypto.openssl_csr:
+      path: "{{ csr_path }}"
+      privatekey_path: "{{ private_key }}"
+      common_name: "{{ ocsm_cert_name }}"
+  - name: Create root-ca cert
+    netapp.ontap.na_ontap_security_certificates:
+      common_name: "{{ ontap_cert_root_common_name }}"
+      name: "{{ ontap_cert_name }}"
+      type: root_ca
+      svm: "{{ vserver }}"
+      expiry_time: P365DT     # one year
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      use_rest: always
+      https: true
+      validate_certs: false
+  - name: sign certificate using newly create certificate
+    tags: sign_request
+    netapp.ontap.na_ontap_security_certificates:
+      name: "{{ ontap_cert_name }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      type: server
+      use_rest: always
+      https: true
+      validate_certs: false   
+      svm: "{{ vserver }}"
+      signing_request: "{{ lookup('file', csr_path) }}"
+      expiry_time: P180DT
+    register: signed_cert
+  - debug:  var=signed_cert.ontap_info.public_certificate
+  - name: Install Certificate
+    netapp.ontap.na_ontap_security_certificates:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      use_rest: always
+      https: true
+      validate_certs: false
+      type: server
+      public_certificate: "{{ signed_cert.ontap_info.public_certificate }}"
+      private_key: "{{ lookup('file', private_key) }}"
+      name: ocsm_cert_name
+      common_name: "{{ ocsm_cert_name }}"
+      svm: "{{ vserver }}"
+  - name: Export Create
+    na_ontap_export_policy:
+      state: present
+      name: export1
+      vserver: "{{ vserver }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false
+  - name: Mod Default Policy
+    na_ontap_export_policy_rule:
+      state: present
+      name: default
+      vserver: "{{ vserver }}"
+      client_match: 0.0.0.0/0
+      rule_index: 1
+      ro_rule: any
+      rw_rule: any
+      protocol: any
+      super_user_security: any
+      anonymous_user_id: 65534
+      allow_suid: false
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false      
+  - name: Export Policy Rule Create
+    na_ontap_export_policy_rule:
+      state: present
+      name: export1
+      vserver: "{{ vserver }}"
+      rule_index: 1
+      client_match: 0.0.0.0/0
+      ro_rule: sys
+      rw_rule: sys
+      protocol: nfs
+      super_user_security: sys
+      anonymous_user_id: 65534
+      allow_suid: false
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false
+  - name: Volume Create
+    na_ontap_volume:
+      state: present
+      name: "{{ vol_name }}"
+      vserver: "{{ vserver }}"
+      aggregate_name: "{{ aggr }}"
+      size: 1
+      size_unit: gb
+      policy: export1
+      junction_path: "/{{ vol_name }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false
+      volume_security_style: ntfs
+  - name: CIFS Share Create
+    na_ontap_cifs:
+      state: present
+      vserver: "{{ vserver }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      path: "/{{ vol_name }}"
+      share_name: "{{ vol_name }}"
+      https: true
+      validate_certs: false
+-
+  name: Set Up Us The Windows
+  hosts: DC1.demo.netapp.com
+  collections:
+    - community.windows
+    - anisble.windows
+  vars:
+    hostname: 192.168.0.101
+    username: DEMO\Administrator
+    password: Netapp1!
+    vserver: svm1_cluster1
+    aggr: aggr1
+    vol_name: vol1
+  tasks:
+  - name: Create User
+    community.windows.win_domain_user:
+      name: georgek
+      firstname: George
+      surname: Kurian
+      password: "{{ password }}"
+      state: present
+      groups:
+        - Domain Admins
+        - Domain Users
+  - name: Map Drive via PS
+    ansible.windows.win_powershell:
+     script: |
+      New-SmbMapping -LocalPath 'X:' -RemotePath '\\192.168.0.131\vol1' -UserName 'DEMO\Administrator' -Password 'Netapp1!';
+      Set-AdUser -Identity georgek -HomeDirectory "\\192.168.0.131\vol1"
+  - name: Add ACL
+    ansible.windows.win_acl:
+      user: DEMO\georgek
+      path: X:\
+      type: deny
+      rights: Write
