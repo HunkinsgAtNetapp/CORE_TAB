@@ -75,7 +75,7 @@ if  ! test -f "$HOME/.ssh/id_rsa"
 fi
 
 # use curl instead
-curl -L -o $playbook.yml https://github.com/nasteam/LOD-ansible/raw/main/new-playbooks/$playbook.yml
+curl -L -o $playbook.yml https://https://github.com/HunkinsgAtNetapp/CORE_TAB/blob/main/TAB/Playbooks/$playbook.yml
 
 # play the playbook 
 ansible-playbook $playbook.yml
