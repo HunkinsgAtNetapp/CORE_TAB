@@ -15,7 +15,7 @@
     cifs_user: georgek
     ontap_cert_root_common_name: ghunkz_root.com
     ontap_cert_name: ghunkz_root
-    ocsm_cert_name: ocsm.netapp.com
+    ocsm_cert_name: cluster1.demo.netapp.com
     private_key: /etc/ssl/private/{{ ocsm_cert_name }}.pem
     csr_path: /etc/ssl/csr/{{ ocsm_cert_name }}.csr
   tasks:
