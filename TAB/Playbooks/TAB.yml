@@ -80,6 +80,19 @@
       name: ocsm.netapp.com
       common_name: "{{ ocsm_cert_name }}"
       svm: "{{ admin_svm }}"
+  - name: Get ocsm cert from ONTAP
+    netapp.ontap.na_ontap_rest_cli:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      #command: 'security/certificates'
+      command: 'security/certificate'
+      verb: 'GET'
+      params: {'vserver': '{{ admin_svm }}','type':'server','fields':'serial: '{{ ocsm.netapp.com }}'}
+      validate_certs: false
+      https: true
+    register: server_cert
+  - debug: var=root_ca_cert.msg.records[0].serial
   - name: Point ONTAP at cert for ocsm
     netapp.ontap.na_ontap_ssh_command:
       hostname: "{{ hostname }}"
