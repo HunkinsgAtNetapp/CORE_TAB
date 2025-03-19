@@ -81,11 +81,12 @@
       common_name: "{{ ocsm_cert_name }}"
       svm: "{{ admin_svm }}"
   - name: Point ONTAP at cert for ocsm
-    na_ontap_command:
-      command: ['security', 'ssl', 'modify', '-vserver', 'cluster1', '-ca', 'ghunkz_root.com', '-serial', '182E42A4373D9E19', '-server-enabled', 'true']
+    netapp.ontap.na_ontap_ssh_command:
       hostname: "{{ hostname }}"
       username: "{{ username }}"
       password: "{{ password }}"
+      command: ssl modify -vserver cluster1 -ca ghunkz_root.com -common-name ghunkz_root.com -server-enabled true
+      privilege: admin
   - name: Export Create
     na_ontap_export_policy:
       state: present
