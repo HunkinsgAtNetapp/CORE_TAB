@@ -87,7 +87,7 @@
       password: "{{ password }}"
       command: ssl modify -vserver cluster1 -ca ghunkz_root.com -common-name ghunkz_root.com -server-enabled true
       privilege: admin
-      accept_unknown_host_keys: false
+      accept_unknown_host_keys: true
   - name: Export Create
     na_ontap_export_policy:
       state: present
