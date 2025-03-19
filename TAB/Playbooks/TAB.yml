@@ -1,5 +1,5 @@
 # TAB_LIVE_TROUBLESHOOTING
-- 
+-
   name: Configure ONTAP
   hosts: localhost
   collections:
@@ -9,14 +9,15 @@
     username: admin
     password: Netapp1!
     vserver: svm1_cluster1
+    admin_svm: cluster1
     aggr: aggr1
     vol_name: vol1
     cifs_user: georgek
     ontap_cert_root_common_name: ghunkz_root.com
     ontap_cert_name: ghunkz_root
     ocsm_cert_name: ocsm.netapp.com
-    private_key: /etc/ssl/private/{{ ocsm.netapp.com }}.pem
-    csr_path: /etc/ssl/csr/{{ ocsm.netapp.com }}.csr
+    private_key: /etc/ssl/private/{{ ocsm_cert_name }}.pem
+    csr_path: /etc/ssl/csr/{{ ocsm_cert_name }}.csr
   tasks:
   - name: Create the SSL Private directory
     ansible.builtin.file:
@@ -76,9 +77,9 @@
       type: server
       public_certificate: "{{ signed_cert.ontap_info.public_certificate }}"
       private_key: "{{ lookup('file', private_key) }}"
-      name: ocsm_cert_name
+      name: ocsm.netapp.com
       common_name: "{{ ocsm_cert_name }}"
-      svm: "{{ vserver }}"
+      svm: "{{ admin_svm }}"
   - name: Export Create
     na_ontap_export_policy:
       state: present
