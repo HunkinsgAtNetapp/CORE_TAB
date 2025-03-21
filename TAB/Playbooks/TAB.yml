@@ -15,7 +15,7 @@
     cifs_user: georgek
     ontap_cert_root_common_name: ghunkz_root.com
     ontap_cert_name: ghunkz_root
-    ocsm_cert_name: cluster1.demo.netapp.com
+    ocsm_cert_name: ocsm.netapp.com
     private_key: /etc/ssl/private/{{ ocsm_cert_name }}.pem
     csr_path: /etc/ssl/csr/{{ ocsm_cert_name }}.csr
   tasks:
@@ -99,6 +99,38 @@
       password: "{{ password }}"
       command: ssl modify -vserver cluster1 -ca ghunkz_root.com -common-name "{{ ocsm_cert_name }}" -server-enabled true -serial "{{ server_cert.msg.records[0].serial }}"
       privilege: admin
+      accept_unknown_host_keys: true
+  - name: Set vserver options
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: vserver modify -vserver "{{ vserver }}" -is-space-reporting-logical true
+      privilege: admin
+      accept_unknown_host_keys: true
+  - name: test systemshell
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: security login unlock diag
+      privilege: diag
+      accept_unknown_host_keys: true
+  - name: test systemshell
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: systemshell local sudo dd if=/dev/urandom of=/clus/svm1_cluster1/vol1/Waffle_House_Anthem.mp3 bs=90000000 count=1 
+      privilege: diag
+      accept_unknown_host_keys: true
+  - name: test systemshell
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: systemshell local "sudo bash -c 'for i in {1..10} ; do cp /clus/svm1_cluster1/vol1/Waffle_House_Anthem.mp3 /clus/svm1_cluster1/vol1/Waffle_House_Anthem$i.mp3 ; done'"
+      privilege: diag
       accept_unknown_host_keys: true
   - name: Export Create
     na_ontap_export_policy:
