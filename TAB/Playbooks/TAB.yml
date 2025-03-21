@@ -89,6 +89,22 @@
       https: true
       validate_certs: false
       volume_security_style: ntfs
+  - name: ASUP enable
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: autosupport modify -node * -support enable
+      privilege: admin
+      accept_unknown_host_keys: true
+  - name: ASUP test
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: autosupport invoke * -type test
+      privilege: admin
+      accept_unknown_host_keys: true
   - name: Create the SSL Private directory
     ansible.builtin.file:
       path: /etc/ssl/private
