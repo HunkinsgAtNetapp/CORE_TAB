@@ -27,6 +27,52 @@
       command: vserver modify -vserver "{{ vserver }}" -is-space-reporting-logical true
       privilege: admin
       accept_unknown_host_keys: true
+  - name: Export Create
+    na_ontap_export_policy:
+      state: present
+      name: export1
+      vserver: "{{ vserver }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false
+  - name: Mod Default Policy
+    na_ontap_export_policy_rule:
+      state: present
+      name: default
+      vserver: "{{ vserver }}"
+      client_match: 0.0.0.0/0
+      rule_index: 1
+      ro_rule: any
+      rw_rule: any
+      protocol: any
+      super_user_security: any
+      anonymous_user_id: 65534
+      allow_suid: false
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false      
+  - name: Export Policy Rule Create
+    na_ontap_export_policy_rule:
+      state: present
+      name: export1
+      vserver: "{{ vserver }}"
+      rule_index: 1
+      client_match: 0.0.0.0/0
+      ro_rule: sys
+      rw_rule: sys
+      protocol: nfs
+      super_user_security: sys
+      anonymous_user_id: 65534
+      allow_suid: false
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      https: true
+      validate_certs: false
   - name: Volume Create
     na_ontap_volume:
       state: present
@@ -43,30 +89,6 @@
       https: true
       validate_certs: false
       volume_security_style: ntfs
-  - name: Unlock diag user
-    netapp.ontap.na_ontap_ssh_command:
-      hostname: "{{ hostname }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      command: security login unlock diag
-      privilege: diag
-      accept_unknown_host_keys: true
-  - name: Setup space test
-    netapp.ontap.na_ontap_ssh_command:
-      hostname: "{{ hostname }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      command: systemshell local sudo dd if=/dev/urandom of=/clus/svm1_cluster1/vol1/Waffle_House_Anthem.mp3 bs=90000000 count=1 
-      privilege: diag
-      accept_unknown_host_keys: true
-  - name: Setup space test 2
-    netapp.ontap.na_ontap_ssh_command:
-      hostname: "{{ hostname }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      command: systemshell local "sudo bash -c 'for i in {1..10} ; do cp /clus/svm1_cluster1/vol1/Waffle_House_Anthem.mp3 /clus/svm1_cluster1/vol1/Waffle_House_Anthem$i.mp3 ; done'"
-      privilege: diag
-      accept_unknown_host_keys: true
   - name: Create the SSL Private directory
     ansible.builtin.file:
       path: /etc/ssl/private
@@ -148,52 +170,30 @@
       command: ssl modify -vserver cluster1 -ca ghunkz_root.com -common-name "{{ ocsm_cert_name }}" -server-enabled true -serial "{{ server_cert.msg.records[0].serial }}"
       privilege: admin
       accept_unknown_host_keys: true
-  - name: Export Create
-    na_ontap_export_policy:
-      state: present
-      name: export1
-      vserver: "{{ vserver }}"
+  - name: Unlock diag
+    netapp.ontap.na_ontap_ssh_command:
       hostname: "{{ hostname }}"
       username: "{{ username }}"
       password: "{{ password }}"
-      https: true
-      validate_certs: false
-  - name: Mod Default Policy
-    na_ontap_export_policy_rule:
-      state: present
-      name: default
-      vserver: "{{ vserver }}"
-      client_match: 0.0.0.0/0
-      rule_index: 1
-      ro_rule: any
-      rw_rule: any
-      protocol: any
-      super_user_security: any
-      anonymous_user_id: 65534
-      allow_suid: false
+      command: security login unlock diag
+      privilege: diag
+      accept_unknown_host_keys: true
+  - name: Setup space test
+    netapp.ontap.na_ontap_ssh_command:
       hostname: "{{ hostname }}"
       username: "{{ username }}"
       password: "{{ password }}"
-      https: true
-      validate_certs: false      
-  - name: Export Policy Rule Create
-    na_ontap_export_policy_rule:
-      state: present
-      name: export1
-      vserver: "{{ vserver }}"
-      rule_index: 1
-      client_match: 0.0.0.0/0
-      ro_rule: sys
-      rw_rule: sys
-      protocol: nfs
-      super_user_security: sys
-      anonymous_user_id: 65534
-      allow_suid: false
+      command: systemshell local sudo dd if=/dev/urandom of=/clus/svm1_cluster1/vol1/Waffle_House_Anthem.mp3 bs=90000000 count=1 
+      privilege: diag
+      accept_unknown_host_keys: true
+  - name: Setup space test 2
+    netapp.ontap.na_ontap_ssh_command:
       hostname: "{{ hostname }}"
       username: "{{ username }}"
       password: "{{ password }}"
-      https: true
-      validate_certs: false
+      command: systemshell local "sudo bash -c 'for i in {1..10} ; do cp /clus/svm1_cluster1/vol1/Waffle_House_Anthem.mp3 /clus/svm1_cluster1/vol1/Waffle_House_Anthem$i.mp3 ; done'"
+      privilege: diag
+      accept_unknown_host_keys: true
   - name: CIFS Share Create
     na_ontap_cifs:
       state: present
@@ -205,6 +205,7 @@
       share_name: "{{ vol_name }}"
       https: true
       validate_certs: false
+-
   name: Set Up Us The Windows
   hosts: DC1.demo.netapp.com
   collections:
