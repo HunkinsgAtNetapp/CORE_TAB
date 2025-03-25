@@ -123,6 +123,8 @@
       path: "{{ csr_path }}"
       privatekey_path: "{{ private_key }}"
       common_name: "{{ ocsm_cert_name }}"
+      extended_key_usage:
+        - serverAuth
   - name: Create root-ca cert
     netapp.ontap.na_ontap_security_certificates:
       common_name: "{{ ontap_cert_root_common_name }}"
