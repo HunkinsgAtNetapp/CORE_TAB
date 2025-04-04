@@ -259,9 +259,9 @@
       type: deny
       rights: Write
   - name: Remove DNS Forwarders
-      win_shell: |
-        Remove-DnsServerForwarder -IPAddress 192.168.0.1 -Passthru -Confirm:$false -Force
-      args:
-        executable: powershell
+    win_shell: |
+      Remove-DnsServerForwarder -IPAddress 192.168.0.1 -Passthru -Confirm:$false -Force
+    args:
+      executable: powershell
   - name: Reboot the machine with all defaults
-      ansible.windows.win_reboot:
+    ansible.windows.win_reboot:
