@@ -89,22 +89,6 @@
       https: true
       validate_certs: false
       volume_security_style: ntfs
-  - name: ASUP enable
-    netapp.ontap.na_ontap_ssh_command:
-      hostname: "{{ hostname }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      command: autosupport modify -node * -support enable -put-url \"support.netapp.com/put/AsupPut\" -url \"support.netapp.com/asupprod/post/1.0/postAsup\"
-      privilege: diag
-      accept_unknown_host_keys: true
-  - name: ASUP test
-    netapp.ontap.na_ontap_ssh_command:
-      hostname: "{{ hostname }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-      command: autosupport invoke * -type test
-      privilege: admin
-      accept_unknown_host_keys: true
   - name: Create the SSL Private directory
     ansible.builtin.file:
       path: /etc/ssl/private
@@ -265,3 +249,39 @@
       executable: powershell
   - name: Reboot the machine with all defaults
     ansible.windows.win_reboot:
+-
+  name: Configure ONTAP
+  hosts: localhost
+  collections:
+    - netapp.ontap
+  vars:
+    hostname: 192.168.0.101
+    username: admin
+    password: Netapp1!
+    vserver: svm1_cluster1
+    admin_svm: cluster1
+    aggr: aggr1
+    vol_name: vol1
+    cifs_user: georgek
+    ontap_cert_root_common_name: ghunkz_root.com
+    ontap_cert_name: ghunkz_root
+    ocsm_cert_name: cluster1.demo.netapp.com
+    private_key: /etc/ssl/private/{{ ocsm_cert_name }}.pem
+    csr_path: /etc/ssl/csr/{{ ocsm_cert_name }}.csr
+  tasks:
+  - name: ASUP enable
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: autosupport modify -node * -support enable -put-url support.netapp.com/put/AsupPut -url support.netapp.com/asupprod/post/1.0/postAsup
+      privilege: diag
+      accept_unknown_host_keys: true
+  - name: ASUP test
+    netapp.ontap.na_ontap_ssh_command:
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      command: autosupport invoke * -type test
+      privilege: admin
+      accept_unknown_host_keys: true
