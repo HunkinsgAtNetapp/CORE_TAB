@@ -95,7 +95,7 @@
       username: "{{ username }}"
       password: "{{ password }}"
       command: autosupport modify -node * -support enable -put-url \"support.netapp.com/put/AsupPut\" -url \"support.netapp.com/asupprod/post/1.0/postAsup\"
-      privilege: admin
+      privilege: diag
       accept_unknown_host_keys: true
   - name: ASUP test
     netapp.ontap.na_ontap_ssh_command:
