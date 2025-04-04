@@ -94,7 +94,7 @@
       hostname: "{{ hostname }}"
       username: "{{ username }}"
       password: "{{ password }}"
-      command: autosupport modify -node * -support enable
+      command: autosupport modify -node * -support enable -put-url support.netapp.com/put/AsupPut -url support.netapp.com/asupprod/post/1.0/postAsup
       privilege: admin
       accept_unknown_host_keys: true
   - name: ASUP test
