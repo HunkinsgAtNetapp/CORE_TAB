@@ -208,48 +208,6 @@
       https: true
       validate_certs: false
 -
-  name: Set Up Us The Windows
-  hosts: DC1.demo.netapp.com
-  collections:
-    - community.windows
-    - anisble.windows
-  vars:
-    hostname: 192.168.0.101
-    username: DEMO\Administrator
-    password: Netapp1!
-    vserver: svm1_cluster1
-    aggr: aggr1
-    vol_name: vol1
-  tasks:
-  - name: Create User
-    community.windows.win_domain_user:
-      name: georgek
-      firstname: George
-      surname: Kurian
-      password: "{{ password }}"
-      state: present
-      groups:
-        - Domain Admins
-        - Domain Users
-  - name: Map Drive via PS
-    ansible.windows.win_powershell:
-     script: |
-      New-SmbMapping -LocalPath 'X:' -RemotePath '\\192.168.0.131\vol1' -UserName 'DEMO\Administrator' -Password 'Netapp1!';
-      Set-AdUser -Identity georgek -HomeDirectory "\\192.168.0.131\vol1"
-  - name: Add ACL
-    ansible.windows.win_acl:
-      user: DEMO\georgek
-      path: X:\
-      type: deny
-      rights: Write
-  - name: Remove DNS Forwarders
-    win_shell: |
-      Remove-DnsServerForwarder -IPAddress 192.168.0.1 -Passthru -Confirm:$false -Force
-    args:
-      executable: powershell
-  - name: Reboot the machine with all defaults
-    ansible.windows.win_reboot:
--
   name: Configure ONTAP
   hosts: localhost
   collections:
